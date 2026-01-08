@@ -73,7 +73,7 @@ interface ICollateralPool {
         uint256 shares; // token in. 1e18
         address token; // token out
         bool isUnwrapWeth; // useful for discount
-        uint256 extraFeeCollateral; // 1e18. send to OrderBook
+        uint256 extraFeeCollateral; // 1e18, amount of pool.collateralToken
     }
 
     struct RemoveLiquidityResult {

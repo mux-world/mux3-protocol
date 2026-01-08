@@ -182,6 +182,11 @@ library LibOrderBook2 {
         LiquidityOrderParams memory orderParams,
         IFacetOpen.ReallocatePositionArgs[] memory reallocateArgs
     ) internal returns (uint256 outAmount, uint256 lpPrice, uint256 collateralPrice) {
+        // reallocate is only allowed when withdrawing pool.collateralToken
+        address poolCollateralToken = ICollateralPool(orderParams.poolAddress).collateralToken();
+        if (orderParams.token != poolCollateralToken) {
+            require(reallocateArgs.length == 0, "reallocate not allowed");
+        }
         // reallocate
         // when removing liquidity from a pool (called focusPool), its utilization will increase.
         // the focusPool is eager to send positions to other pools.

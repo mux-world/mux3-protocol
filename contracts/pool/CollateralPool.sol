@@ -444,7 +444,7 @@ contract CollateralPool is CollateralPoolToken, CollateralPoolStore, CollateralP
         result.collateralPrice = collateralPrice;
         _mint(args.account, result.shares);
         // fees
-        _distributeFee(args.account, collateralPrice, liquidityFeeCollateral, args.isUnwrapWeth);
+        _distributeFee(args.account, _collateralToken, collateralPrice, liquidityFeeCollateral, args.isUnwrapWeth);
         // done
         ICollateralPoolEventEmitter(_eventEmitter).emitAddLiquidity(
             args.account,
@@ -498,8 +498,10 @@ contract CollateralPool is CollateralPoolToken, CollateralPoolStore, CollateralP
             InsufficientCollateral(collateralAmount, liquidityFeeCollateral + args.extraFeeCollateral)
         );
         collateralAmount -= liquidityFeeCollateral;
-        _distributeFee(args.account, collateralPrice, liquidityFeeCollateral, args.isUnwrapWeth);
+        _distributeFee(args.account, token, collateralPrice, liquidityFeeCollateral, args.isUnwrapWeth);
         if (args.extraFeeCollateral > 0) {
+            // extraFeeCollateral is always amount of pool.collateralToken
+            require(token == _collateralToken, InvalidAddress(token));
             // send extra fee to OrderBook. we can not call _distributeFee here because it sends fee to FeeDistributor
             collateralAmount -= args.extraFeeCollateral;
             ICollateralPoolEventEmitter(_eventEmitter).emitCollectFee(
@@ -507,7 +509,10 @@ contract CollateralPool is CollateralPoolToken, CollateralPoolStore, CollateralP
                 collateralPrice,
                 args.extraFeeCollateral
             );
-            IERC20Upgradeable(token).safeTransfer(_orderBook, _toRaw(token, args.extraFeeCollateral));
+            IERC20Upgradeable(_collateralToken).safeTransfer(
+                _orderBook,
+                _toRaw(_collateralToken, args.extraFeeCollateral)
+            );
         }
         // send tokens to lp
         _burn(address(this), args.shares);
@@ -621,18 +626,19 @@ contract CollateralPool is CollateralPoolToken, CollateralPoolStore, CollateralP
      */
     function _distributeFee(
         address lp,
+        address token,
         uint256 collateralPrice,
         uint256 feeCollateral, // decimals = 18
         bool isUnwrapWeth
     ) internal {
-        ICollateralPoolEventEmitter(_eventEmitter).emitCollectFee(_collateralToken, collateralPrice, feeCollateral);
+        ICollateralPoolEventEmitter(_eventEmitter).emitCollectFee(token, collateralPrice, feeCollateral);
         address feeDistributor = _feeDistributor();
-        uint256 rawFee = _toRaw(_collateralToken, feeCollateral);
-        IERC20Upgradeable(_collateralToken).safeTransfer(feeDistributor, rawFee);
+        uint256 rawFee = _toRaw(token, feeCollateral);
+        IERC20Upgradeable(token).safeTransfer(feeDistributor, rawFee);
         IMux3FeeDistributor(feeDistributor).updateLiquidityFees(
             lp,
             address(this), // poolAddress
-            _collateralToken,
+            token,
             rawFee,
             isUnwrapWeth
         );

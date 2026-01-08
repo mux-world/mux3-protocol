@@ -447,6 +447,7 @@ describe("Trade", () => {
         const [poolTokens, poolBalances] = await pool1.liquidityBalances()
         expect(poolTokens[0]).to.equal(usdc.address)
         expect(poolBalances[0]).to.equal(toWei("999900")) // 1000000 - fee
+        await assertPoolBalances(pool1)
       }
       expect(await pool1.balanceOf(lp1.address)).to.equal(toWei("999900"))
       expect(await pool1.totalSupply()).to.equal(toWei("999900"))
@@ -461,6 +462,7 @@ describe("Trade", () => {
         const [poolTokens, poolBalances] = await pool2.liquidityBalances()
         expect(poolTokens[0]).to.equal(usdc.address)
         expect(poolBalances[0]).to.equal(toWei("999900")) // 1000000 - fee
+        await assertPoolBalances(pool2)
       }
       expect(await pool2.balanceOf(lp1.address)).to.equal(toWei("999900"))
       expect(await pool2.totalSupply()).to.equal(toWei("999900"))
@@ -475,6 +477,7 @@ describe("Trade", () => {
         const [poolTokens, poolBalances] = await pool3.liquidityBalances()
         expect(poolTokens[2]).to.equal(btc.address)
         expect(poolBalances[2]).to.equal(toWei("19.998")) // 20 - fee
+        await assertPoolBalances(pool3)
       }
       expect(await pool3.balanceOf(lp1.address)).to.equal(toWei("999900"))
       expect(await pool3.totalSupply()).to.equal(toWei("999900"))
@@ -540,6 +543,7 @@ describe("Trade", () => {
         const [poolTokens, poolBalances] = await pool3.liquidityBalances()
         expect(poolTokens[2]).to.equal(btc.address)
         expect(poolBalances[2]).to.equal(toWei("19.996")) // 19.998 - 100 * nav / 40000
+        await assertPoolBalances(pool3)
       }
       expect(await pool3.totalSupply()).to.equal(toWei("999800")) // 999900 - 100
       expect(await pool3.getAumUsd()).to.equal(toWei("799840")) // 19.996 * 40000
@@ -576,6 +580,7 @@ describe("Trade", () => {
         const [poolTokens, poolBalances] = await pool3.liquidityBalances()
         expect(poolTokens[2]).to.equal(btc.address)
         expect(poolBalances[2]).to.equal(toWei("19.994")) // 19.996 - 100 * nav / 40000
+        await assertPoolBalances(pool3)
       }
       expect(await pool3.totalSupply()).to.equal(toWei("999700")) // 999800 - 100
       expect(await pool3.getAumUsd()).to.equal(toWei("799760")) // 19.994 * 40000
@@ -623,6 +628,7 @@ describe("Trade", () => {
         expect(balances.balances[0]).to.equal(toWei("999900"))
         expect(balances.tokens[1]).to.equal(arb.address)
         expect(balances.balances[1]).to.equal(toWei("10"))
+        await assertPoolBalances(pool1)
       }
       {
         expect(await pool1.getAumUsd()).to.equal(toWei("999920")) // 999900 + 10 * 2
@@ -643,6 +649,7 @@ describe("Trade", () => {
         // previous nav = 999920 / 999900 = 1.000020002000200020
         // 15 * 1.000020002000200020 / 2 = 7.500150015001500150
         expect(await arb.balanceOf(lp1.address)).to.equal(toWei("1000007.4994")) // 1000000 + 7.500150015001500150 * 0.9999
+        expect(await arb.balanceOf(feeDistributor.address)).to.equal(toWei("0.000750015001500150")) // 7.500150015001500150 * 0.0001
       }
       {
         const balances = await pool1.liquidityBalances()
@@ -650,6 +657,7 @@ describe("Trade", () => {
         expect(balances.balances[0]).to.equal(toWei("999900"))
         expect(balances.tokens[1]).to.equal(arb.address)
         expect(balances.balances[1]).to.equal(toWei("2.499849984998499850")) // 10 - 7.500150015001500150
+        await assertPoolBalances(pool1)
       }
       expect(await pool1.getAumUsd()).to.equal(toWei("999904.999699969996999700")) // 999900 + 2.499849984998499850 * 2
     })
@@ -853,16 +861,19 @@ describe("Trade", () => {
           const [poolTokens, poolBalances] = await pool1.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool1)
         }
         {
           const [poolTokens, poolBalances] = await pool2.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool2)
         }
         {
           const [poolTokens, poolBalances] = await pool3.liquidityBalances()
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("19.998")) // unchanged
+          await assertPoolBalances(pool3)
         }
         {
           // fee = 50000 * 1 * 0.1% = 50
@@ -1079,16 +1090,19 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool1.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool1)
           }
           {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool2)
           }
           {
             const [poolTokens, poolBalances] = await pool3.liquidityBalances()
             expect(poolTokens[2]).to.equal(btc.address)
             expect(poolBalances[2]).to.equal(toWei("19.998")) // unchanged
+            await assertPoolBalances(pool3)
           }
           await core.setMockPrice(a2b(btc.address), toWei("50500"))
           await usdcFeeder.setMockData(toUnit("1", 8), await time.latest())
@@ -1123,6 +1137,7 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+              await assertPoolBalances(pool1)
             }
             {
               const marketInfo1 = await pool1.marketState(long1)
@@ -1219,11 +1234,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+              await assertPoolBalances(pool2)
             }
             await time.increaseTo(timestampOfTest + 86400 * 2 + 930 + 86400 * 7)
             await expect(orderBook.connect(broker).fillPositionOrder(5)).to.revertedWith("limit")
@@ -1301,11 +1318,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("957010.703247")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("947551.200000")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId)
@@ -1391,11 +1410,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("957010.703247")) // unchanged
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("947551.200000")) // unchanged
+              await assertPoolBalances(pool2)
             }
             {
               // borrowing = 0
@@ -1415,11 +1436,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("909833.050001")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("889966.95")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId)
@@ -1558,11 +1581,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool2)
             }
             await time.increaseTo(timestampOfTest + 86400 * 2 + 930 + 86400 * 7)
             await core.setMockPrice(a2b(btc.address), toWei("49000"))
@@ -1641,11 +1666,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("1001906.703246")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("1002655.2")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId)
@@ -1733,11 +1760,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("1001906.703246")) // the same as balanceOf
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("1002655.2")) // the same as balanceOf
+              await assertPoolBalances(pool2)
             }
             await core.setMockPrice(a2b(btc.address), toWei("50473"))
             await usdcFeeder.setMockData(toUnit("1", 8), await time.latest())
@@ -1761,11 +1790,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("1001778.139500")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("1002818.860500")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId)
@@ -1964,11 +1995,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+              await assertPoolBalances(pool2)
             }
             await time.increaseTo(timestampOfTest + 86400 * 2 + 930 + 86400 * 7)
             await expect(orderBook.connect(broker).fillPositionOrder(5)).to.revertedWith("limit")
@@ -2757,11 +2790,13 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool1.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool1)
           }
           {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool2)
           }
           await core.setMockPrice(a2b(btc.address), toWei("50500"))
           await usdcFeeder.setMockData(toUnit("1", 8), await time.latest())
@@ -2780,6 +2815,7 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool1)
             }
             {
               const marketInfo1 = await pool1.marketState(long1)
@@ -2877,11 +2913,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool2)
             }
             await time.increaseTo(timestampOfTest + 86400 * 2 + 930 + 86400 * 7)
             await expect(orderBook.connect(broker).fillPositionOrder(5)).to.revertedWith("limit")
@@ -2952,11 +2990,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("989900")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId)
@@ -3035,11 +3075,13 @@ describe("Trade", () => {
               const [poolTokens, poolBalances] = await pool1.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("989900")) // the same as balanceOf
+              await assertPoolBalances(pool1)
             }
             {
               const [poolTokens, poolBalances] = await pool2.liquidityBalances()
               expect(poolTokens[0]).to.equal(usdc.address)
               expect(poolBalances[0]).to.equal(toWei("999900")) // the same as balanceOf
+              await assertPoolBalances(pool2)
             }
             {
               // acc1 0.140980166767003251 * 7 / 365 = 0.002703729225668555
@@ -3061,11 +3103,13 @@ describe("Trade", () => {
                 const [poolTokens, poolBalances] = await pool1.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("909833.05")) // the same as balanceOf
+                await assertPoolBalances(pool1)
               }
               {
                 const [poolTokens, poolBalances] = await pool2.liquidityBalances()
                 expect(poolTokens[0]).to.equal(usdc.address)
                 expect(poolBalances[0]).to.equal(toWei("889966.95")) // the same as balanceOf
+                await assertPoolBalances(pool2)
               }
               {
                 const collaterals = await core.listAccountCollaterals(positionId2)
@@ -3200,11 +3244,13 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool1.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("990400")) // 999900 - 9500
+            await assertPoolBalances(pool1)
           }
           {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("1009400")) // 999900 + 9500
+            await assertPoolBalances(pool2)
           }
           {
             expect(await pool1.callStatic.getAumUsd()).to.equal(toWei("909833.049999999999999996")) // 990400 - (60000 - 50440.674647904035310449) * 8.4281
@@ -3324,11 +3370,13 @@ describe("Trade", () => {
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
             expect(poolTokens[2]).to.equal(btc.address)
             expect(poolBalances[2]).to.equal(toWei("0.00200400")) // 100 / 49900
+            await assertPoolBalances(pool1)
           }
           {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool2)
           }
           {
             const [poolTokens, poolBalances] = await pool3.liquidityBalances()
@@ -3336,6 +3384,7 @@ describe("Trade", () => {
             expect(poolBalances[0]).to.equal(toWei("0"))
             expect(poolTokens[2]).to.equal(btc.address)
             expect(poolBalances[2]).to.equal(toWei("19.99599600")) // 19.998 - 100 / 49900
+            await assertPoolBalances(pool3)
           }
           {
             // note: pool1 aum is missed by 0.0004 in this case. this is caused by btc decimals precision,
@@ -3442,6 +3491,7 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool1.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("982400")) // 999900 - 17500
+            await assertPoolBalances(pool1)
           }
           {
             expect(await pool1.callStatic.getAumUsd()).to.equal(toWei("964900")) // 982400 - (50000 * 0.5 * 0.70)
@@ -3504,6 +3554,7 @@ describe("Trade", () => {
           const [poolTokens, poolBalances] = await pool1.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("964900")) // 999900 - 35000
+          await assertPoolBalances(pool1)
         }
         {
           expect(await pool1.callStatic.getAumUsd()).to.equal(toWei("964900")) // poolBalance
@@ -3655,16 +3706,19 @@ describe("Trade", () => {
           const [poolTokens, poolBalances] = await pool1.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool1)
         }
         {
           const [poolTokens, poolBalances] = await pool2.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool2)
         }
         {
           const [poolTokens, poolBalances] = await pool3.liquidityBalances()
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("19.998")) // unchanged
+          await assertPoolBalances(pool3)
         }
         {
           // fee = 50000 * 1 * 0.1% = 50
@@ -3826,6 +3880,7 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("982400")) // 999900 - 17500
+            await assertPoolBalances(pool2)
           }
           {
             expect(await pool2.callStatic.getAumUsd()).to.equal(toWei("964900")) // 982400 - (50000 * 0.5 * 0.70)
@@ -3918,16 +3973,19 @@ describe("Trade", () => {
           const [poolTokens, poolBalances] = await pool1.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool1)
         }
         {
           const [poolTokens, poolBalances] = await pool2.liquidityBalances()
           expect(poolTokens[0]).to.equal(usdc.address)
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+          await assertPoolBalances(pool2)
         }
         {
           const [poolTokens, poolBalances] = await pool3.liquidityBalances()
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("19.998")) // unchanged
+          await assertPoolBalances(pool3)
         }
         {
           // fee = 50000 * 60 * 0.1% = 3000
@@ -4490,7 +4548,7 @@ describe("Trade", () => {
         }
       })
 
-      it("remove liquidity (usdc) + reallocate2, lp pays position fees", async () => {
+      it("remove liquidity (btc) + reallocate2, lp pays position fees", async () => {
         expect(await btc.balanceOf(feeDistributor.address)).to.equal(toUnit("0.002", 8))
         expect(await pool3.balanceOf(lp1.address)).to.equal(toWei("999900"))
         {
@@ -4656,6 +4714,7 @@ describe("Trade", () => {
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("1.5")) // got pnl = (60000 - 50000) * 9 / 60000
+          await assertPoolBalances(pool1)
         }
         {
           const [poolTokens, poolBalances] = await pool2.liquidityBalances()
@@ -4663,11 +4722,13 @@ describe("Trade", () => {
           expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("0.33333333")) // got pnl = (60000 - 50000) * 2 / 60000
+          await assertPoolBalances(pool2)
         }
         {
           const [poolTokens, poolBalances] = await pool3.liquidityBalances()
           expect(poolTokens[2]).to.equal(btc.address)
           expect(poolBalances[2]).to.equal(toWei("11.740550923758709207")) // collateral - pnl - liquidityFee = 19.998 - (1.5 + 0.33333333) - 6.424115746241290793
+          await assertPoolBalances(pool3)
         }
         {
           expect(await btc.balanceOf(lp1.address)).to.equal(toUnit("999986.41247333", 8)) // 999980 + 6.412473334666666664
@@ -4781,16 +4842,19 @@ describe("Trade", () => {
             const [poolTokens, poolBalances] = await pool1.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool1)
           }
           {
             const [poolTokens, poolBalances] = await pool2.liquidityBalances()
             expect(poolTokens[0]).to.equal(usdc.address)
             expect(poolBalances[0]).to.equal(toWei("999900")) // unchanged
+            await assertPoolBalances(pool2)
           }
           {
             const [poolTokens, poolBalances] = await pool3.liquidityBalances()
             expect(poolTokens[2]).to.equal(btc.address)
             expect(poolBalances[2]).to.equal(toWei("19.998")) // unchanged
+            await assertPoolBalances(pool3)
           }
           {
             // fee = 2 * 70000 * 0.1% = 140
@@ -5599,4 +5663,25 @@ describe("Trade", () => {
       ])
     ).to.be.revertedWith("PositionAccountNotExist")
   })
+
+  // assert balanceOf(pool) >= _liquidityBalances for each token
+  async function assertPoolBalances(pool: CollateralPool) {
+    const balances = await pool.liquidityBalances()
+    const tokenDecimals: { [key: string]: number } = {
+      [usdc.address]: 6,
+      [arb.address]: 18,
+      [btc.address]: 8,
+    }
+    for (let i = 0; i < balances.tokens.length; i++) {
+      const token = balances.tokens[i]
+      const decimals = tokenDecimals[token]
+      if (decimals === undefined) {
+        throw new Error(`Unknown token ${token}`)
+      }
+      const actualBalance = await (await ethers.getContractAt("MockERC20", token)).balanceOf(pool.address)
+      const recordedBalance = balances.balances[i]
+      const converted = recordedBalance.div(ethers.BigNumber.from(10).pow(18 - decimals))
+      expect(actualBalance).to.be.gte(converted, `Pool balance violated for token ${token}`)
+    }
+  }
 })

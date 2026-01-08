@@ -193,19 +193,19 @@
   "LibOrderBook": {
     "type": "plain",
     "name": "LibOrderBook",
-    "address": "0xEAFab0D20d8403d2562A8661d3e274AD14a21Cd4",
+    "address": "0x1B8Ac2bDf693457Ab25233f2a2865f3e7d2A63eF",
     "deployedAt": 302779880
   },
   "LibOrderBook2": {
     "type": "plain",
     "name": "LibOrderBook2",
-    "address": "0xaf0d89034d3f82A7101f5D8F485347ed5b1a5730",
+    "address": "0x0035F6ca0417CD36EB62764bCBBE163E7D296059",
     "deployedAt": 302779897
   },
   "OrderBook__implementation": {
     "type": "plain",
     "name": "OrderBook__implementation",
-    "address": "0x0f4DfD1CEAbb84C2e79645B71dA321D09203ea39",
+    "address": "0x981cA8C8aAc913a306e7D609ecD760671C4BcbB1",
     "deployedAt": 302779918
   },
   "OrderBook": {
@@ -214,7 +214,7 @@
     "address": "0x8ec387586a709ECE1a9Ea83c6163c3616D8E16b4",
     "dependencies": {
       "admin": "0xc83805E374D67954Fa61B08f6e025662850aB1b6",
-      "implementation": "0x0f4DfD1CEAbb84C2e79645B71dA321D09203ea39"
+      "implementation": "0x981cA8C8aAc913a306e7D609ecD760671C4BcbB1"
     },
     "deployedAt": 302779934
   },
@@ -237,7 +237,7 @@
   "Mux3FeeDistributor__implementation": {
     "type": "plain",
     "name": "Mux3FeeDistributor__implementation",
-    "address": "0xb9943B7DA8933C199a7D3aE4dFf62316eb480b6f",
+    "address": "0x6045fa46310574f6002376b6e5ed7a64fe161a03",
     "deployedAt": 302779975
   },
   "Mux3FeeDistributor": {
@@ -246,7 +246,7 @@
     "address": "0x8824b3464dAb29Fc68cC8c74D5eAd8B05054E5F8",
     "dependencies": {
       "admin": "0xc83805E374D67954Fa61B08f6e025662850aB1b6",
-      "implementation": "0xb9943B7DA8933C199a7D3aE4dFf62316eb480b6f"
+      "implementation": "0x6045fa46310574f6002376b6e5ed7a64fe161a03"
     },
     "deployedAt": 302779990
   },
@@ -269,7 +269,7 @@
   "CollateralPool__implementation": {
     "type": "plain",
     "name": "CollateralPool__implementation",
-    "address": "0x91cf3E76b198fff00E77B9812d1D0f67459Ee189",
+    "address": "0x2f9AC5322E6FaC446E0B9861Cf7f8A0662F7b909",
     "deployedAt": 302780034
   },
   "MuxPriceProvider__implementation": {
@@ -291,8 +291,8 @@
   "Swapper__implementation": {
     "type": "plain",
     "name": "Swapper__implementation",
-    "address": "0xd18E07Ec76e04228422d6650aC5c334f1fe608Be",
-    "deployedAt": 302780106
+    "address": "0x7f64014Cd8fA9309a43C1DD37317cCc2527D1337",
+    "deployedAt": 377939523
   },
   "Swapper": {
     "type": "upgradeable",
@@ -300,7 +300,7 @@
     "address": "0x0D37BC91a3F1807cf4305E4A5eDEb4Ee47FA7112",
     "dependencies": {
       "admin": "0xc83805E374D67954Fa61B08f6e025662850aB1b6",
-      "implementation": "0xd18E07Ec76e04228422d6650aC5c334f1fe608Be"
+      "implementation": "0x7f64014Cd8fA9309a43C1DD37317cCc2527D1337"
     },
     "deployedAt": 302780125
   },
