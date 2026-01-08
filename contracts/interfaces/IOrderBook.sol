@@ -80,14 +80,14 @@ struct PositionOrderParams {
     // * withdrawUsd means to withdraw collateral. this is independent of flags.POSITION_WITHDRAW_PROFIT
     // * flags.POSITION_UNWRAP_ETH means to unwrap WETH into ETH
     uint256 withdrawUsd; // only valid when close a position
-    address withdrawSwapToken; // only valid when close a position and withdraw. try to swap to this token
+    address withdrawSwapToken; // only valid when close a position and withdraw. try to swap to this token. use address(0) to skip swap
     uint256 withdrawSwapSlippage; // only valid when close a position and withdraw. slippage tolerance for withdrawSwapToken. if swap cannot achieve this slippage, swap will be skipped
     // tpsl strategy, only valid when openPosition
     uint256 tpPriceDiff; // take-profit price will be marketPrice * diff. decimals = 18. leave 0 if no tp
     uint256 slPriceDiff; // stop-loss price will be marketPrice * diff. decimals = 18. leave 0 if no sl
     uint64 tpslExpiration; // timestamp. decimals = 0. only valid when tpPriceDiff > 0 or slPriceDiff > 0
     uint256 tpslFlags; // POSITION_WITHDRAW_ALL_IF_EMPTY, POSITION_WITHDRAW_PROFIT, POSITION_UNWRAP_ETH. only valid when tpPriceDiff > 0 or slPriceDiff > 0
-    address tpslWithdrawSwapToken; // only valid when tpPriceDiff > 0 or slPriceDiff > 0
+    address tpslWithdrawSwapToken; // only valid when tpPriceDiff > 0 or slPriceDiff > 0. use address(0) to skip swap
     uint256 tpslWithdrawSwapSlippage; // only valid when tpPriceDiff > 0 or slPriceDiff > 0
 }
 
@@ -104,8 +104,8 @@ struct WithdrawalOrderParams {
     address tokenAddress;
     uint256 rawAmount; // erc20.decimals
     bool isUnwrapWeth;
-    address lastConsumedToken; // this token will be consumed last. can be 0 if no preference
-    address withdrawSwapToken; // try to swap to this token
+    address lastConsumedToken; // this token will be consumed last. can be address(0) if no preference
+    address withdrawSwapToken; // try to swap to this token. use address(0) to skip swap
     uint256 withdrawSwapSlippage; // slippage tolerance for withdrawSwapToken. if swap cannot achieve this slippage, swap will be skipped
 }
 

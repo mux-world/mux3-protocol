@@ -92,7 +92,7 @@ contract FacetPositionAccount is Mux3TradeBase, IFacetPositionAccount {
      *        - positionId: The position identifier
      *        - collateralToken: Token to withdraw
      *        - amount: Amount to withdraw
-     *        - withdrawSwapToken: Token to swap to (if swapping)
+     *        - withdrawSwapToken: Token to swap to. use address(0) to skip swap
      *        - withdrawSwapSlippage: Maximum allowed slippage for swap
      *        - lastConsumedToken: Last token consumed for borrowing fees
      *        - isUnwrapWeth: Whether to unwrap WETH to ETH
@@ -137,7 +137,7 @@ contract FacetPositionAccount is Mux3TradeBase, IFacetPositionAccount {
      * @notice Withdraws all collateral from a position account
      * @param args The withdrawal arguments containing:
      *        - positionId: The position identifier
-     *        - withdrawSwapToken: Token to swap to (if swapping)
+     *        - withdrawSwapToken: Token to swap to. use address(0) to skip swap
      *        - withdrawSwapSlippage: Maximum allowed slippage for swap
      *        - isUnwrapWeth: Whether to unwrap WETH to ETH
      * @dev Only callable by ORDER_BOOK_ROLE. All positions must be closed first
@@ -184,7 +184,7 @@ contract FacetPositionAccount is Mux3TradeBase, IFacetPositionAccount {
      * @param args The withdrawal arguments containing:
      *        - positionId: The position identifier
      *        - collateralUsd: USD value to withdraw
-     *        - withdrawSwapToken: Token to swap to (if swapping)
+     *        - withdrawSwapToken: Token to swap to. use address(0) to skip swap
      *        - withdrawSwapSlippage: Maximum allowed slippage for swap
      *        - lastConsumedToken: Last token consumed for borrowing fees
      *        - isUnwrapWeth: Whether to unwrap WETH to ETH

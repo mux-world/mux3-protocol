@@ -7,6 +7,7 @@ interface IMux3FeeDistributor {
     event FeeDistributedAsRebate(address indexed tokenAddress, address indexed trader, uint256 rawAmount);
     event FeeDistributedToVe(address indexed tokenAddress, uint256 rawAmount);
     event ClaimVeReward(address indexed tokenAddress, uint256 rawAmount);
+    event SetReferralManager(address indexed referralManager);
 
     function updateLiquidityFees(
         address lp,
