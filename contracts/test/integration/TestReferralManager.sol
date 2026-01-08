@@ -27,4 +27,6 @@ contract TestReferralManager {
         }
         tierSettings[tier] = IReferralManager.TierSetting(tier, stakeThreshold, discountRate, rebateRate);
     }
+
+    function getExtraDiscount(address trader) external view returns (uint64 discount) {}
 }

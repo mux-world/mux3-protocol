@@ -17,6 +17,8 @@ interface IReferralManager {
     event SetMaintainer(address previousMaintainer, address newMaintainer);
     event SetRebateRecipient(bytes32 referralCode, address referralCodeOwner, address rebateRecipient);
     event TransferReferralCode(bytes32 referralCode, address previousOwner, address newOwner);
+    event SetBonusDiscount(address[] traders, uint64[] discounts, uint64 expiredAt);
+    event SetTradingIncentiveDiscount(address[] traders, uint64[] discounts, uint64 expiredAt);
 
     function isHandler(address handler) external view returns (bool);
 
@@ -46,4 +48,14 @@ interface IReferralManager {
     function tierSettings(
         uint256 tier
     ) external view returns (uint8 retTier, uint64 stakeThreshold, uint64 discountRate, uint64 rebateRate);
+
+    function setBonusDiscount(address[] memory traders, uint64[] memory discounts, uint64 expiredAt) external;
+
+    function setTradingIncentiveDiscount(
+        address[] memory traders,
+        uint64[] memory discounts,
+        uint64 expiredAt
+    ) external;
+
+    function getExtraDiscount(address trader) external view returns (uint64 discount);
 }

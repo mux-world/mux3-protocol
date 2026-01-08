@@ -14,6 +14,7 @@ import "../libraries/LibBalancer2.sol";
 import "../interfaces/IErrors.sol";
 import "../interfaces/ISwapper.sol";
 import "../libraries/LibBytes.sol";
+import "../interfaces/IERC4626.sol";
 
 /**
  * @notice Swapper is used to swap tokens (usually trading profits) into another token (usually a trader's collateral)
@@ -57,8 +58,19 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
      */
     address public balancer2Vault;
 
+    /**
+     * @notice The sUSDC ERC4626 vault address
+     */
+    address public susdc;
+
+    /**
+     * @notice The underlying USDC token address
+     */
+    address public usdc;
+
     event SetUniswap3(address uniswap3Router, address uniswap3Quoter);
     event SetBalancer2(address balancer2Vault);
+    event SetSUSDC(address susdc, address usdc);
     event SetSwapPath(address tokenIn, address tokenOut, bytes[] paths);
     event AppendSwapPath(address tokenIn, address tokenOut, bytes path);
     event MissingSwapPath(address tokenIn, address tokenOut);
@@ -112,6 +124,20 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
         require(balancer2Vault_ != address(0), "Swapper::INVALID_BALANCER_VAULT");
         balancer2Vault = balancer2Vault_;
         emit SetBalancer2(balancer2Vault_);
+    }
+
+    /**
+     * @notice Sets the sUSDC ERC4626 vault and USDC addresses
+     * @param susdc_ The sUSDC vault address
+     * @param usdc_ The USDC token address
+     */
+    function setSUSDC(address susdc_, address usdc_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(susdc_ != address(0), "Swapper::INVALID_SUSDC");
+        require(usdc_ != address(0), "Swapper::INVALID_USDC");
+        require(IERC4626(susdc_).asset() == usdc_, "Swapper::ASSET_MISMATCH");
+        susdc = susdc_;
+        usdc = usdc_;
+        emit SetSUSDC(susdc_, usdc_);
     }
 
     /**
@@ -192,7 +218,7 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
      * @notice Swaps tokens. If the swap fails or if tokenOut is same as tokenIn, transfers tokenIn instead.
      * @param tokenIn The address of the input token
      * @param amountIn The amount of input tokens to swap
-     * @param tokenOut The address of the output token (use address(0) to skip swap)
+     * @param tokenOut The address of the output token. Use address(0) to skip swap
      * @param minAmountOut The minimum amount of output tokens required for the swap
      * @param receiver The address that will receive the output tokens
      * @param isUnwrapWeth If true and output is WETH, unwraps to ETH before transfer
@@ -207,23 +233,84 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
         address receiver,
         bool isUnwrapWeth
     ) external returns (bool, uint256) {
+        require(tokenIn != address(0), "Swapper::INVALID_TOKEN");
+        require(receiver != address(0), "Swapper::INVALID_RECEIVER");
         // no swap needed
         if (tokenOut == address(0) || tokenOut == tokenIn) {
             _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
             return (false, amountIn);
         }
+        address actualTokenIn = tokenIn;
+        address actualTokenOut = tokenOut;
+        uint256 actualAmountIn = amountIn;
+        uint256 actualMinAmountOut = minAmountOut;
+        if (_isSUSDCEnabled() && tokenIn == susdc) {
+            actualTokenIn = usdc;
+            actualAmountIn = _redeemSUSDC(amountIn);
+        }
+        if (_isSUSDCEnabled() && tokenOut == susdc) {
+            actualTokenOut = usdc;
+            actualMinAmountOut = IERC4626(susdc).previewMint(minAmountOut);
+        }
+        (bool swapSuccess, uint256 amountOut) = _trySwap(
+            actualTokenIn,
+            actualAmountIn,
+            actualTokenOut,
+            actualMinAmountOut,
+            receiver,
+            isUnwrapWeth
+        );
+        if (!swapSuccess) {
+            // if we already converted sUSDC to USDC, need to deposit back
+            // rollback to susdc
+            uint256 rollbackAmount = amountIn;
+            if (_isSUSDCEnabled() && tokenIn == susdc) {
+                rollbackAmount = _depositUSDC(actualAmountIn);
+            }
+            _transfer(tokenIn, rollbackAmount, isUnwrapWeth, receiver);
+            return (false, rollbackAmount);
+        }
+        if (_isSUSDCEnabled() && tokenOut == susdc) {
+            amountOut = _depositUSDC(amountOut);
+        }
+        // transfer swapped tokens
+        require(
+            IERC20MetadataUpgradeable(tokenOut).balanceOf(address(this)) >= amountOut,
+            "Swapper::INVALID_TOKEN_OUT"
+        );
+        _transfer(tokenOut, amountOut, isUnwrapWeth, receiver);
+        emit SwapSuccess(tokenIn, amountIn, tokenOut, amountOut);
+        return (true, amountOut);
+    }
+
+    function _trySwap(
+        address tokenIn,
+        uint256 amountIn,
+        address tokenOut,
+        uint256 minAmountOut,
+        address receiver,
+        bool isUnwrapWeth
+    ) internal returns (bool, uint256) {
+        if (tokenOut == tokenIn) {
+            if (amountIn >= minAmountOut) {
+                return (true, amountIn);
+            } else {
+                emit SwapFailed(tokenIn, amountIn, tokenOut, minAmountOut, false, amountIn, false, amountIn);
+                return (false, amountIn);
+            }
+        }
         // path not found
         bytes[] memory paths = swapPaths[encodeTokenPair(tokenIn, tokenOut)];
         if (paths.length == 0) {
             emit MissingSwapPath(tokenIn, tokenOut);
-            _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
+            // _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
             return (false, amountIn);
         }
         // quote
         (bool quoteSuccess, , bytes memory bestPath, uint256 bestOutAmount) = _quote(tokenIn, tokenOut, amountIn);
         if (!quoteSuccess || bestOutAmount < minAmountOut) {
             emit SwapFailed(tokenIn, amountIn, tokenOut, minAmountOut, quoteSuccess, bestOutAmount, false, 0);
-            _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
+            // _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
             return (false, amountIn);
         }
         // swap
@@ -239,17 +326,29 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
                 swapSuccess,
                 amountOut
             );
-            _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
+            // _transfer(tokenIn, amountIn, isUnwrapWeth, receiver);
             return (false, amountIn);
         }
-        // transfer swapped tokens
-        require(
-            IERC20MetadataUpgradeable(tokenOut).balanceOf(address(this)) >= amountOut,
-            "Swapper::INVALID_TOKEN_OUT"
-        );
-        _transfer(tokenOut, amountOut, isUnwrapWeth, receiver);
-        emit SwapSuccess(tokenIn, amountIn, tokenOut, amountOut);
         return (true, amountOut);
+    }
+
+    function _isSUSDCEnabled() internal view returns (bool) {
+        return susdc != address(0) && usdc != address(0);
+    }
+
+    function _redeemSUSDC(uint256 susdcAmount) internal returns (uint256 usdcAmount) {
+        if (susdcAmount == 0) {
+            return 0;
+        }
+        usdcAmount = IERC4626(susdc).redeem(susdcAmount, address(this), address(this));
+    }
+
+    function _depositUSDC(uint256 usdcAmount) internal returns (uint256 susdcAmount) {
+        if (usdcAmount == 0) {
+            return 0;
+        }
+        IERC20Upgradeable(usdc).forceApprove(susdc, usdcAmount);
+        susdcAmount = IERC4626(susdc).deposit(usdcAmount, address(this));
     }
 
     /**
@@ -275,17 +374,50 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
         address tokenOut,
         uint256 amountIn
     ) internal returns (bool quoteSuccess, uint256 bestPathIndex, bytes memory bestPath, uint256 bestOutAmount) {
-        bytes[] memory paths = swapPaths[encodeTokenPair(tokenIn, tokenOut)];
+        // handle sUSDC conversion
+        address pathTokenIn = tokenIn;
+        address pathTokenOut = tokenOut;
+        uint256 pathAmountIn = amountIn;
+
+        // if input is sUSDC, convert to USDC for path lookup
+        if (tokenIn == susdc && susdc != address(0) && usdc != address(0)) {
+            pathTokenIn = usdc;
+            // convert sUSDC amount to USDC amount
+            pathAmountIn = IERC4626(susdc).previewRedeem(amountIn);
+            // if susdc => usdc, usdc out = redeemed amount
+            if (tokenOut == usdc) {
+                return (true, 0, "", pathAmountIn);
+            }
+        }
+
+        // if output is sUSDC, use USDC for path lookup
+        if (tokenOut == susdc && susdc != address(0) && usdc != address(0)) {
+            if (tokenIn == usdc) {
+                // if usdc => susdc, susdc out = deposited amount
+                uint256 susdcOut = IERC4626(susdc).previewDeposit(amountIn);
+                return (true, 0, "", susdcOut);
+            } else {
+                pathTokenOut = usdc;
+            }
+        }
+
+        bytes[] memory paths = swapPaths[encodeTokenPair(pathTokenIn, pathTokenOut)];
         require(paths.length > 0, "Swapper::NO_PATH_SET");
         for (uint256 i = 0; i < paths.length; i++) {
             bool localSuccess;
             uint256 localAmountOut;
             (Protocol protocol, bytes memory rawPath) = decodePath(paths[i]);
             if (protocol == Protocol.Uniswap3) {
-                (localSuccess, localAmountOut) = LibUniswap3.quote(uniswap3Quoter, rawPath, amountIn);
+                (localSuccess, localAmountOut) = LibUniswap3.quote(uniswap3Quoter, rawPath, pathAmountIn);
             } else if (protocol == Protocol.Balancer2) {
-                (localSuccess, localAmountOut) = LibBalancer2.quote(balancer2Vault, rawPath, amountIn);
+                (localSuccess, localAmountOut) = LibBalancer2.quote(balancer2Vault, rawPath, pathAmountIn);
             }
+
+            // if output should be sUSDC, convert USDC quote to sUSDC
+            if (tokenOut == susdc && susdc != address(0) && usdc != address(0) && localSuccess) {
+                localAmountOut = IERC4626(susdc).previewDeposit(localAmountOut);
+            }
+
             if (localSuccess && localAmountOut > bestOutAmount) {
                 quoteSuccess = true;
                 bestPathIndex = i;

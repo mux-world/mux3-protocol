@@ -56,6 +56,12 @@ contract Mux3FeeDistributor is Initializable, AccessControlEnumerableUpgradeable
         require(msg.sender == weth, "WETH");
     }
 
+    function setReferralManager(address referralManager_) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(referralManager_ != address(0), "Invalid referral manager");
+        referralManager = referralManager_;
+        emit SetReferralManager(referralManager_);
+    }
+
     /**
      * @dev MUX3 core collects liquidity fees when fillLiquidityOrder.
      *
@@ -190,6 +196,10 @@ contract Mux3FeeDistributor is Initializable, AccessControlEnumerableUpgradeable
             rebateRate = uint256(rate2) * 10 ** 13;
         } else {
             // empty referral code is not tier 0, but zero discount/rebate
+        }
+        uint64 extraDiscount = IReferralManager(referralManager).getExtraDiscount(trader);
+        if (extraDiscount > 0) {
+            discountRate += uint256(extraDiscount) * 10 ** 13;
         }
     }
 

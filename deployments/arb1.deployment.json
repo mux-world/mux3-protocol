@@ -366,5 +366,21 @@
     "type": "preset",
     "name": "MuxDegenOrderBook",
     "address": "0xab7bD145CC9B68b1904D4B6Ca93056f503C5aA19"
+  },
+  "SusdcOracleL2__implementation": {
+    "type": "plain",
+    "name": "SusdcOracleL2__implementation",
+    "address": "0x840f8BBE851f652aAD3c165c3B143b519Faa66C2",
+    "deployedAt": 369565633
+  },
+  "SusdcOracleL2": {
+    "type": "upgradeable",
+    "name": "SusdcOracleL2",
+    "address": "0xf8B3Fa720a9Cd8ABeeD5A81f11F80cD8f93E6B57",
+    "dependencies": {
+      "admin": "0xc83805E374D67954Fa61B08f6e025662850aB1b6",
+      "implementation": "0x840f8BBE851f652aAD3c165c3B143b519Faa66C2"
+    },
+    "deployedAt": 369565648
   }
 }
