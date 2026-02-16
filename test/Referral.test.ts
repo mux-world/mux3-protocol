@@ -176,6 +176,7 @@ describe("Referral", () => {
     ])) as MockUniswap3
     swapper = (await createContract("Swapper", [])) as Swapper
     await swapper.initialize(weth.address)
+    await swapper.grantRole(await swapper.SET_ROUTE_ROLE(), admin.address)
     await swapper.setUniswap3(uniswap.address, uniswap.address)
     await swapper.setSwapPath(usdc.address, btc.address, [
       "0x" + SWAPPER_UNI3 + usdc.address.slice(2) + "0001f4" + btc.address.slice(2),

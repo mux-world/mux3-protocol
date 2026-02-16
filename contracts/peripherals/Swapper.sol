@@ -25,6 +25,8 @@ import "../interfaces/IERC4626.sol";
 contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
+    bytes32 public constant SET_ROUTE_ROLE = keccak256("SET_ROUTE_ROLE");
+
     enum Protocol {
         Uniswap3,
         Balancer2
@@ -153,7 +155,7 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
         address tokenIn,
         address tokenOut,
         bytes[] memory paths
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(SET_ROUTE_ROLE) {
         for (uint256 i = 0; i < paths.length; i++) {
             _verifyPath(tokenIn, tokenOut, paths[i]);
         }
@@ -171,7 +173,7 @@ contract Swapper is AccessControlEnumerableUpgradeable, ISwapper, IErrors {
         address tokenIn,
         address tokenOut,
         bytes memory path
-    ) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    ) external onlyRole(SET_ROUTE_ROLE) {
         _verifyPath(tokenIn, tokenOut, path);
         swapPaths[encodeTokenPair(tokenIn, tokenOut)].push(path);
         emit AppendSwapPath(tokenIn, tokenOut, path);

@@ -43,6 +43,7 @@ const mux3Tranche = "0xE84fE6066191D9c0D72aB10F8e56Bc686fc12537"
 
 async function main(deployer: Deployer) {
   // deploy
+  const [admin1] = await ethers.getSigners()
   const proxyAdmin = deployer.addressOf("ProxyAdmin")
   const usdc = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831"
   const usdce = "0xff970a61a04b1ca14834a43f5de4533ebddb5cc8"
@@ -228,6 +229,7 @@ async function main(deployer: Deployer) {
     await ensureFinished(swapper.initialize(weth))
     await ensureFinished(swapper.setUniswap3(uni3Router, uni3Quoter))
     await ensureFinished(swapper.setBalancer2(balancer2Vault))
+    await ensureFinished(swapper.grantRole(ethers.utils.id("SET_ROUTE_ROLE"), admin1.address))
 
     // aum reader
     // https://docs.chain.link/data-feeds/price-feeds/addresses/?network=arbitrum&amp%3Bpage=1&page=1

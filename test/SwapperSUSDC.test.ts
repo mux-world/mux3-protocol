@@ -61,6 +61,7 @@ describe("Swapper with sUSDC", () => {
     // deploy and configure swapper
     swapper = (await createContract("Swapper", [])) as Swapper
     await swapper.initialize(weth.address)
+    await swapper.grantRole(await swapper.SET_ROUTE_ROLE(), user0.address)
     await swapper.setUniswap3(uniswap3.address, uniswap3.address)
     await swapper.setBalancer2(balancer2.address)
     await swapper.setSUSDC(susdc.address, usdc.address)
@@ -487,6 +488,7 @@ describe("Swapper with sUSDC", () => {
       // deploy new swapper without sUSDC configuration
       const newSwapper = (await createContract("Swapper", [])) as Swapper
       await newSwapper.initialize(weth.address)
+      await newSwapper.grantRole(await newSwapper.SET_ROUTE_ROLE(), user0.address)
       await newSwapper.setUniswap3(uniswap3.address, uniswap3.address)
 
       // setup USDC => WETH path
