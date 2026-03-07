@@ -36,10 +36,9 @@ library LibOrderBook2 {
         LibOrderBook._validatePool(orderBook, orderParams.poolAddress);
         if (orderParams.isAdding) {
             require(!LibOrderBook._isPoolDraining(orderParams.poolAddress), "Draining pool");
-            address collateralAddress = ICollateralPool(orderParams.poolAddress).collateralToken();
-            LibOrderBook._transferIn(orderBook, collateralAddress, orderParams.rawAmount); // collateral
             address collateralToken = ICollateralPool(orderParams.poolAddress).collateralToken();
             require(orderParams.token == collateralToken, "Token mismatch");
+            LibOrderBook._transferIn(orderBook, orderParams.token, orderParams.rawAmount); // collateral
         } else {
             LibOrderBook._transferIn(orderBook, orderParams.poolAddress, orderParams.rawAmount); // share
             LibOrderBook._validateCollateral(orderBook, orderParams.token);
@@ -231,8 +230,8 @@ library LibOrderBook2 {
         // min order protection
         address collateralAddress = ICollateralPool(orderParams.poolAddress).collateralToken();
         {
-            uint256 price = LibOrderBook._priceOf(orderBook, collateralAddress);
-            uint256 value = (LibOrderBook._collateralToWad(orderBook, collateralAddress, outAmount) * price) / 1e18;
+            uint256 price = LibOrderBook._priceOf(orderBook, orderParams.token);
+            uint256 value = (LibOrderBook._collateralToWad(orderBook, orderParams.token, outAmount) * price) / 1e18;
             uint256 minUsd = LibOrderBook._minLiquidityOrderUsd(orderBook);
             require(value >= minUsd, "Min liquidity order value");
         }
