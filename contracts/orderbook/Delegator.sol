@@ -3,9 +3,19 @@ pragma solidity 0.8.28;
 
 import "@openzeppelin/contracts-upgradeable/utils/AddressUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import { IOrderBook as IMux3OrderBook, IOrderBookGetter as IMux3OrderBookGetter, PositionOrderParams as Mux3PositionOrderParams } from "../interfaces/IOrderBook.sol";
-import { WithdrawalOrderParams as Mux3WithdrawalOrderParams, WithdrawAllOrderParams as Mux3WithdrawAllOrderParams } from "../interfaces/IOrderBook.sol";
-import { OrderData as Mux3OrderData, ModifyPositionOrderParams as Mux3ModifyPositionOrderParams } from "../interfaces/IOrderBook.sol";
+import {
+    IOrderBook as IMux3OrderBook,
+    IOrderBookGetter as IMux3OrderBookGetter,
+    PositionOrderParams as Mux3PositionOrderParams
+} from "../interfaces/IOrderBook.sol";
+import {
+    WithdrawalOrderParams as Mux3WithdrawalOrderParams,
+    WithdrawAllOrderParams as Mux3WithdrawAllOrderParams
+} from "../interfaces/IOrderBook.sol";
+import {
+    OrderData as Mux3OrderData,
+    ModifyPositionOrderParams as Mux3ModifyPositionOrderParams
+} from "../interfaces/IOrderBook.sol";
 import { LibCodec as LibMux3Codec } from "../libraries/LibCodec.sol";
 import { IMuxOrderBook } from "../interfaces/IMuxOrderBook.sol";
 import { IMux2ProxyFactory } from "../interfaces/IMux2ProxyFactory.sol";
@@ -71,8 +81,7 @@ contract Delegator is Initializable {
      *      example for collateral = USDC or WETH:
      *        multicall([
      *          mux3DepositGas(gas),
-     *          mux3TransferToken(collateral),
-     *          mux3PlacePositionOrder(positionOrderParams),
+     *          mux3PlacePositionOrder(positionOrderParams, referralCode),
      *        ])
      */
     function multicall(bytes[] calldata proxyCalls) external payable returns (bytes[] memory results) {
@@ -208,9 +217,15 @@ contract Delegator is Initializable {
         uint256 initialLeverage, // 0 = ignore
         uint256 gas // 0 = ignore
     ) external payable {
-        bytes32 positionId = _decodeBytes32(positionOrderCallData, 0);
-        address account = _getSubAccountOwner(positionId);
+        (Mux3PositionOrderParams memory orderParams, ) = abi.decode(
+            positionOrderCallData,
+            (Mux3PositionOrderParams, bytes32)
+        );
+        (address account, ) = LibMux3Codec.decodePositionId(orderParams.positionId);
         _consumeDelegation(account, 1);
+        // enforce collateralToken/collateralAmount are the same as inner positionOrderCallData
+        require(orderParams.collateralToken == collateralToken, "CollateralTokenMismatch");
+        require(orderParams.collateralAmount == collateralAmount, "CollateralAmountMismatch");
         uint256 value = gas;
         if (
             collateralAmount > 0 &&
@@ -241,20 +256,6 @@ contract Delegator is Initializable {
     }
 
     /**
-     * @notice MUX3: Trader transfer ERC20 tokens (usually collaterals) to the OrderBook
-     *
-     *         note: transferToken is intended to be used as part of a multicall. If it is called directly
-     *               the caller would end up losing the funds.
-     * @param owner Address of the owner of the tokens
-     * @param token Address of the token to transfer
-     * @param amount Amount of tokens to transfer
-     */
-    function mux3TransferToken(address owner, address token, uint256 amount) external payable {
-        _consumeDelegation(owner, 0);
-        IMux3OrderBook(_mux3OrderBook).transferTokenFrom(owner, token, amount);
-    }
-
-    /**
      * @notice MUX3: A Trader can open/close position
      *         Market order will expire after marketOrderTimeout seconds.
      *         Limit/Trigger order will expire after deadline.
@@ -265,6 +266,13 @@ contract Delegator is Initializable {
     function mux3PlacePositionOrder(Mux3PositionOrderParams memory orderParams, bytes32 referralCode) external payable {
         (address owner, ) = LibMux3Codec.decodePositionId(orderParams.positionId);
         _consumeDelegation(owner, 1);
+        if (orderParams.collateralToken != address(0) && orderParams.collateralAmount > 0) {
+            IMux3OrderBook(_mux3OrderBook).transferTokenFrom(
+                owner,
+                orderParams.collateralToken,
+                orderParams.collateralAmount
+            );
+        }
         IMux3OrderBook(_mux3OrderBook).placePositionOrder(orderParams, referralCode);
     }
 
@@ -304,7 +312,7 @@ contract Delegator is Initializable {
     }
 
     /**
-     * @notice MUX3: A Trader can deposit collateral into a PositionAccount
+     * @notice MUX3: A Trader can deposit collateral into a PositionAccount.
      * @param positionId The ID of the position
      * @param collateralToken The address of the collateral token
      * @param collateralAmount The amount of collateral token
@@ -317,6 +325,9 @@ contract Delegator is Initializable {
     ) external payable {
         (address owner, ) = LibMux3Codec.decodePositionId(positionId);
         _consumeDelegation(owner, 0);
+        if (collateralAmount > 0) {
+            IMux3OrderBook(_mux3OrderBook).transferTokenFrom(owner, collateralToken, collateralAmount);
+        }
         IMux3OrderBook(_mux3OrderBook).depositCollateral(positionId, collateralToken, collateralAmount);
     }
 
